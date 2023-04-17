@@ -28,9 +28,10 @@ fn verify(
     audio_dir_path: String,
     parallel: bool,
 ) -> PyResult<&'_ PyList> {
-    if cfg!(feature = "rayon") && parallel {
-        let results = py
-            .allow_threads(move || verify_audio_files(config_fp.as_str(), audio_dir_path.as_str()));
+    if parallel {
+        let results: Result<_, _> = py.allow_threads(move || {
+            par_verify_audio_files(config_fp.as_str(), audio_dir_path.as_str())
+        });
         let r = match results {
             Ok(results) => {
                 let results = PyList::new(py, results);
@@ -46,13 +47,13 @@ fn verify(
         Ok(results)
     } else {
         println!("Not using rayon");
-        let results = verify_audio_files_seq(config_fp.as_str(), audio_dir_path.as_str())?;
+        let results = verify_audio_files(config_fp.as_str(), audio_dir_path.as_str())?;
         let results = PyList::new(py, results);
         Ok(results)
     }
 }
 
-pub fn verify_audio_files_seq(
+pub fn verify_audio_files(
     config_fp: &str,
     audio_dir_path: &str,
 ) -> Result<Vec<VerificationResult>, AVError> {
@@ -84,8 +85,7 @@ pub fn verify_audio_files_seq(
         .collect::<Vec<VerificationResult>>())
 }
 
-#[cfg(feature = "rayon")]
-pub fn verify_audio_files(
+pub fn par_verify_audio_files(
     config_fp: &str,
     audio_dir_path: &str,
 ) -> Result<Vec<VerificationResult>, AVError> {

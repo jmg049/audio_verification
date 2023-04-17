@@ -23,7 +23,6 @@ pub fn read_config(verification_config_path: &Path) -> Result<VerificationConfig
     Ok(config)
 }
 
-
 #[inline(always)]
 pub fn find_sub_chunk_id(
     file: &mut BufReader<File>,
